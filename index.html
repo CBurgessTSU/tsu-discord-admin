@@ -379,7 +379,7 @@
                             </ul>
                             ${data.warning ? `<p style="color: #ca8a04; font-weight: 600;">⚠️ ${data.warning}</p>` : ''}
                             <div class="oauth-url" id="oauthUrl">${data.oauthUrl}</div>
-                            <button class="copy-btn" onclick="copyOAuthUrl()">
+                            <button class="copy-btn" onclick="copyOAuthUrl(this)">
                                 📋 Copy Join Link
                             </button>
                         </div>
@@ -418,10 +418,9 @@
             }
         });
 
-        function copyOAuthUrl() {
+        function copyOAuthUrl(btn) {
             const oauthUrl = document.getElementById('oauthUrl').textContent;
             navigator.clipboard.writeText(oauthUrl).then(() => {
-                const btn = event.target;
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '✓ Copied to Clipboard!';
                 btn.classList.add('copied');
