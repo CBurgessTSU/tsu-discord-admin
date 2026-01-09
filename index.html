@@ -294,22 +294,10 @@
         <p class="subtitle">Create a join link for students to access an existing class</p>
 
         <div class="form-group">
-            <label for="roleId">Role ID</label>
-            <div class="input-wrapper">
-                <input
-                    type="text"
-                    id="roleId"
-                    name="roleId"
-                    placeholder="e.g., 1234567890123456789"
-                    autocomplete="off"
-                >
-                <div class="validation-message" id="roleIdValidation">
-                    Role ID must be a numeric string
-                </div>
-            </div>
-            <p style="font-size: 13px; color: #718096; margin-top: 8px;">
-                To find a Role ID: Go to Server Settings → Roles → Right-click a role → Copy Role ID
-            </p>
+            <label for="roleSelect">Select Role</label>
+            <select id="roleSelect" disabled>
+                <option value="">Loading roles...</option>
+            </select>
         </div>
 
         <button id="generateLinkBtn" disabled>
@@ -322,6 +310,7 @@
 
     <script>
         const WEBHOOK_URL = 'https://tsu-n8n.onrender.com/webhook/create-discord-class';
+        const GET_ROLES_URL = 'https://tsu-n8n.onrender.com/webhook/get-discord-roles';
 
         // Basic HTTP Auth
         const AUTH_USER = 'tsu';
@@ -486,45 +475,41 @@
         }
 
         // Generate Link for Existing Role functionality
-        const roleIdInput = document.getElementById('roleId');
-        const roleIdValidation = document.getElementById('roleIdValidation');
+        const roleSelect = document.getElementById('roleSelect');
         const generateLinkBtn = document.getElementById('generateLinkBtn');
         const generateBtnText = document.getElementById('generateBtnText');
         const generateSpinner = document.getElementById('generateSpinner');
         const existingRoleResult = document.getElementById('existingRoleResult');
 
-        // Validation regex: numeric string (Discord snowflake IDs are 17-19 digits)
-        const roleIdRegex = /^\d{17,19}$/;
+        // Load Discord roles on page load
+        fetch(GET_ROLES_URL)
+            .then(response => response.json())
+            .then(roles => {
+                roleSelect.innerHTML = '<option value="">Select a role...</option>';
+                roles.forEach(role => {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    roleSelect.appendChild(option);
+                });
+                roleSelect.disabled = false;
+            })
+            .catch(error => {
+                roleSelect.innerHTML = '<option value="">Error loading roles</option>';
+                console.error('Error loading roles:', error);
+            });
 
-        // Validate role ID input
-        roleIdInput.addEventListener('input', (e) => {
-            const value = e.target.value.trim();
-
-            if (value === '') {
-                // Empty input - reset state
-                roleIdInput.classList.remove('valid', 'invalid');
-                roleIdValidation.classList.remove('show');
-                generateLinkBtn.disabled = true;
-            } else if (roleIdRegex.test(value)) {
-                // Valid input
-                roleIdInput.classList.remove('invalid');
-                roleIdInput.classList.add('valid');
-                roleIdValidation.classList.remove('show');
-                generateLinkBtn.disabled = false;
-            } else {
-                // Invalid input
-                roleIdInput.classList.remove('valid');
-                roleIdInput.classList.add('invalid');
-                roleIdValidation.classList.add('show');
-                generateLinkBtn.disabled = true;
-            }
+        // Enable generate button when role is selected
+        roleSelect.addEventListener('change', () => {
+            generateLinkBtn.disabled = !roleSelect.value;
         });
 
         // Generate link button click handler
         generateLinkBtn.addEventListener('click', () => {
-            const roleId = roleIdInput.value.trim();
+            const roleId = roleSelect.value;
+            const roleName = roleSelect.options[roleSelect.selectedIndex].text;
 
-            if (!roleId || !roleIdRegex.test(roleId)) return;
+            if (!roleId) return;
 
             // Generate OAuth URL
             const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=1458911804368490654&redirect_uri=https%3A%2F%2Ftsu-n8n.onrender.com%2Fwebhook%2Fdiscord-oauth&response_type=code&scope=identify%20guilds.join&state=${roleId}`;
@@ -533,7 +518,7 @@
             existingRoleResult.className = 'result success';
             existingRoleResult.style.display = '';
             existingRoleResult.innerHTML = `
-                <div class="result-title">✅ Join Link Generated</div>
+                <div class="result-title">✅ Join Link Generated: ${roleName}</div>
                 <div class="result-content">
                     <p style="margin-bottom: 12px;"><strong>Share this link with students to grant them access:</strong></p>
                     <div class="oauth-url" id="existingOauthUrl">${oauthUrl}</div>
