@@ -1,6 +1,6 @@
 # TSU Discord Class Manager
 
-A web-based admin panel for TradeSmart University that automates Discord class setup and student onboarding.
+A simple web-based admin panel for TradeSmart University that automates Discord class setup and student onboarding.
 
 ## Overview
 
@@ -113,8 +113,6 @@ https://tsu-n8n.onrender.com/webhook/discord-oauth
 
 ## Security Notes
 
-- The `.env` file contains sensitive credentials and is excluded from Git
-- The `.git-token` file contains the GitHub personal access token and is excluded from Git
 - Basic password protection is implemented in the frontend
 - OAuth flow uses secure Discord authorization
 
