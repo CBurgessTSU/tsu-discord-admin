@@ -3,3 +3,4 @@
 *.json
 node_modules/
 .DS_Store
+discord-plan.md
