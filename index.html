@@ -88,6 +88,27 @@
             border-color: #ef4444;
         }
 
+        select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.2s;
+            background: white;
+            cursor: pointer;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #4b48d7;
+        }
+
+        select:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .validation-message {
             margin-top: 6px;
             font-size: 13px;
@@ -264,10 +285,32 @@
         </form>
 
         <div id="result" class="result"></div>
+
+        <!-- Divider -->
+        <div style="margin: 48px 0; border-top: 2px solid #e2e8f0;"></div>
+
+        <!-- Generate Link for Existing Role -->
+        <h2 style="text-align: center; color: #2d3748; font-size: 24px; margin-bottom: 8px;">Generate Link for Existing Role</h2>
+        <p class="subtitle">Create a join link for students to access an existing class</p>
+
+        <div class="form-group">
+            <label for="roleSelect">Select Role</label>
+            <select id="roleSelect" disabled>
+                <option value="">Loading roles...</option>
+            </select>
+        </div>
+
+        <button id="generateLinkBtn" disabled>
+            <span id="generateBtnText">Generate Join Link</span>
+            <span id="generateSpinner" class="spinner" style="display: none;"></span>
+        </button>
+
+        <div id="existingRoleResult" class="result"></div>
     </div>
 
     <script>
         const WEBHOOK_URL = 'https://tsu-n8n.onrender.com/webhook/create-discord-class';
+        const GET_ROLES_URL = 'https://tsu-n8n.onrender.com/webhook/get-discord-roles';
 
         // Basic HTTP Auth
         const AUTH_USER = 'tsu';
@@ -420,6 +463,74 @@
 
         function copyOAuthUrl(btn) {
             const oauthUrl = document.getElementById('oauthUrl').textContent;
+            navigator.clipboard.writeText(oauthUrl).then(() => {
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✓ Copied to Clipboard!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.remove('copied');
+                }, 2000);
+            });
+        }
+
+        // Generate Link for Existing Role functionality
+        const roleSelect = document.getElementById('roleSelect');
+        const generateLinkBtn = document.getElementById('generateLinkBtn');
+        const generateBtnText = document.getElementById('generateBtnText');
+        const generateSpinner = document.getElementById('generateSpinner');
+        const existingRoleResult = document.getElementById('existingRoleResult');
+
+        // Load Discord roles on page load
+        fetch(GET_ROLES_URL)
+            .then(response => response.json())
+            .then(roles => {
+                roleSelect.innerHTML = '<option value="">Select a role...</option>';
+                roles.forEach(role => {
+                    const option = document.createElement('option');
+                    option.value = role.id;
+                    option.textContent = role.name;
+                    roleSelect.appendChild(option);
+                });
+                roleSelect.disabled = false;
+            })
+            .catch(error => {
+                roleSelect.innerHTML = '<option value="">Error loading roles</option>';
+                console.error('Error loading roles:', error);
+            });
+
+        // Enable generate button when role is selected
+        roleSelect.addEventListener('change', () => {
+            generateLinkBtn.disabled = !roleSelect.value;
+        });
+
+        // Generate link button click handler
+        generateLinkBtn.addEventListener('click', () => {
+            const roleId = roleSelect.value;
+            const roleName = roleSelect.options[roleSelect.selectedIndex].text;
+
+            if (!roleId) return;
+
+            // Generate OAuth URL
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=1458911804368490654&redirect_uri=https%3A%2F%2Ftsu-n8n.onrender.com%2Fwebhook%2Fdiscord-oauth&response_type=code&scope=identify%20guilds.join&state=${roleId}`;
+
+            // Display result
+            existingRoleResult.className = 'result success';
+            existingRoleResult.style.display = '';
+            existingRoleResult.innerHTML = `
+                <div class="result-title">✅ Join Link Generated: ${roleName}</div>
+                <div class="result-content">
+                    <p style="margin-bottom: 12px;"><strong>Share this link with students to grant them access:</strong></p>
+                    <div class="oauth-url" id="existingOauthUrl">${oauthUrl}</div>
+                    <button class="copy-btn" onclick="copyExistingOAuthUrl(this)">
+                        📋 Copy Join Link
+                    </button>
+                </div>
+            `;
+        });
+
+        function copyExistingOAuthUrl(btn) {
+            const oauthUrl = document.getElementById('existingOauthUrl').textContent;
             navigator.clipboard.writeText(oauthUrl).then(() => {
                 const originalText = btn.innerHTML;
                 btn.innerHTML = '✓ Copied to Clipboard!';
