@@ -109,6 +109,87 @@
             cursor: not-allowed;
         }
 
+        /* Custom dropdown styles */
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select.disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .select-display {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .select-display:hover {
+            border-color: #cbd5e0;
+        }
+
+        .select-display.open {
+            border-color: #4b48d7;
+        }
+
+        .select-arrow {
+            margin-left: 8px;
+            transition: transform 0.2s;
+        }
+
+        .select-display.open .select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .select-options {
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .select-options.open {
+            display: block;
+        }
+
+        .select-option {
+            padding: 10px 16px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            transition: background 0.15s;
+        }
+
+        .select-option:hover {
+            background: #f7fafc;
+        }
+
+        .role-color-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 10px;
+            flex-shrink: 0;
+        }
+
         .validation-message {
             margin-top: 6px;
             font-size: 13px;
@@ -295,9 +376,13 @@
 
         <div class="form-group">
             <label for="roleSelect">Select Role</label>
-            <select id="roleSelect" disabled>
-                <option value="">Loading roles...</option>
-            </select>
+            <div class="custom-select disabled" id="customSelect">
+                <div class="select-display" id="selectDisplay">
+                    <span id="selectedRoleText">Loading roles...</span>
+                    <span class="select-arrow">▼</span>
+                </div>
+                <div class="select-options" id="selectOptions"></div>
+            </div>
         </div>
 
         <button id="generateLinkBtn" disabled>
@@ -475,50 +560,109 @@
         }
 
         // Generate Link for Existing Role functionality
-        const roleSelect = document.getElementById('roleSelect');
+        const customSelect = document.getElementById('customSelect');
+        const selectDisplay = document.getElementById('selectDisplay');
+        const selectedRoleText = document.getElementById('selectedRoleText');
+        const selectOptions = document.getElementById('selectOptions');
         const generateLinkBtn = document.getElementById('generateLinkBtn');
         const generateBtnText = document.getElementById('generateBtnText');
         const generateSpinner = document.getElementById('generateSpinner');
         const existingRoleResult = document.getElementById('existingRoleResult');
 
+        let selectedRole = null;
+
+        // Convert Discord color number to hex
+        function colorToHex(color) {
+            if (!color || color === 0) return '#99aab5'; // Default gray for no color
+            return '#' + color.toString(16).padStart(6, '0');
+        }
+
         // Load Discord roles on page load
         fetch(GET_ROLES_URL)
             .then(response => response.json())
             .then(roles => {
-                roleSelect.innerHTML = '<option value="">Select a role...</option>';
+                selectOptions.innerHTML = '';
                 roles.forEach(role => {
-                    const option = document.createElement('option');
-                    option.value = role.id;
-                    option.textContent = role.name;
-                    roleSelect.appendChild(option);
+                    const option = document.createElement('div');
+                    option.className = 'select-option';
+                    option.dataset.roleId = role.id;
+                    option.dataset.roleName = role.name;
+                    option.dataset.roleColor = colorToHex(role.color);
+
+                    const colorDot = document.createElement('div');
+                    colorDot.className = 'role-color-dot';
+                    colorDot.style.backgroundColor = colorToHex(role.color);
+
+                    const roleName = document.createElement('span');
+                    roleName.textContent = role.name;
+
+                    option.appendChild(colorDot);
+                    option.appendChild(roleName);
+
+                    option.addEventListener('click', () => {
+                        selectedRole = {
+                            id: role.id,
+                            name: role.name,
+                            color: colorToHex(role.color)
+                        };
+
+                        // Update display
+                        selectedRoleText.innerHTML = '';
+                        const displayDot = document.createElement('div');
+                        displayDot.className = 'role-color-dot';
+                        displayDot.style.backgroundColor = selectedRole.color;
+                        displayDot.style.display = 'inline-block';
+                        displayDot.style.verticalAlign = 'middle';
+                        selectedRoleText.appendChild(displayDot);
+                        selectedRoleText.appendChild(document.createTextNode(' ' + selectedRole.name));
+
+                        // Close dropdown
+                        selectOptions.classList.remove('open');
+                        selectDisplay.classList.remove('open');
+
+                        // Enable generate button
+                        generateLinkBtn.disabled = false;
+                    });
+
+                    selectOptions.appendChild(option);
                 });
-                roleSelect.disabled = false;
+
+                customSelect.classList.remove('disabled');
+                selectedRoleText.textContent = 'Select a role...';
             })
             .catch(error => {
-                roleSelect.innerHTML = '<option value="">Error loading roles</option>';
+                selectedRoleText.textContent = 'Error loading roles';
                 console.error('Error loading roles:', error);
             });
 
-        // Enable generate button when role is selected
-        roleSelect.addEventListener('change', () => {
-            generateLinkBtn.disabled = !roleSelect.value;
+        // Toggle dropdown
+        selectDisplay.addEventListener('click', () => {
+            if (!customSelect.classList.contains('disabled')) {
+                selectOptions.classList.toggle('open');
+                selectDisplay.classList.toggle('open');
+            }
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!customSelect.contains(e.target)) {
+                selectOptions.classList.remove('open');
+                selectDisplay.classList.remove('open');
+            }
         });
 
         // Generate link button click handler
         generateLinkBtn.addEventListener('click', () => {
-            const roleId = roleSelect.value;
-            const roleName = roleSelect.options[roleSelect.selectedIndex].text;
-
-            if (!roleId) return;
+            if (!selectedRole) return;
 
             // Generate OAuth URL
-            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=1458911804368490654&redirect_uri=https%3A%2F%2Ftsu-n8n.onrender.com%2Fwebhook%2Fdiscord-oauth&response_type=code&scope=identify%20guilds.join&state=${roleId}`;
+            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=1458911804368490654&redirect_uri=https%3A%2F%2Ftsu-n8n.onrender.com%2Fwebhook%2Fdiscord-oauth&response_type=code&scope=identify%20guilds.join&state=${selectedRole.id}`;
 
             // Display result
             existingRoleResult.className = 'result success';
             existingRoleResult.style.display = '';
             existingRoleResult.innerHTML = `
-                <div class="result-title">✅ Join Link Generated: ${roleName}</div>
+                <div class="result-title">✅ Join Link Generated: ${selectedRole.name}</div>
                 <div class="result-content">
                     <p style="margin-bottom: 12px;"><strong>Share this link with students to grant them access:</strong></p>
                     <div class="oauth-url" id="existingOauthUrl">${oauthUrl}</div>
