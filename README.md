@@ -23,12 +23,12 @@ This system allows TSU staff to quickly create Discord classes and generate join
 
 ### For Admins
 
-1. **Access the Admin Panel**: Navigate to the deployed frontend URL
+1. **Access the Admin Panel**: Navigate to the deployed frontend URL: https://tsu-discord-admin.onrender.com
 2. **Authenticate**: Enter the password when prompted (credentials provided separately)
 3. **Choose an Option**:
    - **Create New Class**: Enter a class name, click "Create Discord Channel"
    - **Existing Role Link**: Select a role from the dropdown, click "Generate Join Link"
-4. **Share the Link**: Copy the generated OAuth2 link and share it with students
+4. **Share the Link**: Copy the generated OAuth2 link and share it with students (ideally as a button, the URL itself is a bit long)
 
 ### For Students
 
@@ -77,7 +77,7 @@ This system allows TSU staff to quickly create Discord classes and generate join
 The frontend is deployed as a static site on Render:
 - Automatically deploys from the `main` branch
 - No build process required (static HTML)
-- Live URL: (Render will provide this)
+- Live URL: https://tsu-discord-admin.onrender.com/
 
 ### n8n Configuration
 
@@ -109,7 +109,6 @@ https://tsu-n8n.onrender.com/webhook/discord-oauth
 - `tsu_logo.jpg` - TSU logo image
 - `favicon.png` - Browser favicon
 - `.gitignore` - Excludes sensitive files from Git
-- `setup_discord_sheet.py` - Python script to initialize Google Sheet with headers
 
 ## Security Notes
 
@@ -118,7 +117,7 @@ https://tsu-n8n.onrender.com/webhook/discord-oauth
 
 ## Support
 
-For issues or questions, contact the TSU development team.
+For issues or questions, contact Chris: cburgess@tradesmartu.com
 
 ## License
 
