@@ -323,6 +323,60 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Tab styles */
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 32px;
+            gap: 8px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            color: #718096;
+            border: none;
+            border-bottom: 3px solid transparent;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-radius: 0;
+            width: auto;
+        }
+
+        .tab:hover {
+            color: #4b48d7;
+            background: #f7fafc;
+        }
+
+        .tab.active {
+            color: #4b48d7;
+            border-bottom-color: #4b48d7;
+            background: transparent;
+        }
+
+        .tab-panel {
+            display: none;
+        }
+
+        .tab-panel.active {
+            display: block;
+        }
+
+        .section-title {
+            color: #2d3748;
+            font-size: 20px;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .section-subtitle {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
         /* Mobile responsive */
         @media (max-width: 640px) {
             .container {
@@ -332,16 +386,36 @@
             h1 {
                 font-size: 24px;
             }
+
+            .tabs {
+                gap: 0;
+            }
+
+            .tab {
+                padding: 12px 16px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
         <img src="tsu_logo.jpg" alt="TSU Logo" class="logo">
-        <h1 style="text-align: center;">Discord Class Creator</h1>
-        <p class="subtitle">Create a new class channel with automatic role assignment</p>
+        <h1 style="text-align: center;">Discord Class Manager</h1>
+        <p class="subtitle">Manage Discord classes and role assignments</p>
 
-        <form id="classForm">
+        <!-- Tab Navigation -->
+        <div class="tabs">
+            <button class="tab active" data-tab="create">Create New Class</button>
+            <button class="tab" data-tab="existing">Existing Role Link</button>
+        </div>
+
+        <!-- Tab 1: Create New Class -->
+        <div class="tab-panel active" id="createPanel">
+            <div class="section-title">Create New Class</div>
+            <div class="section-subtitle">Create a new Discord category, channel, and role with automatic assignment</div>
+
+            <form id="classForm">
             <div class="form-group">
                 <label for="className">Class Name</label>
                 <div class="input-wrapper">
@@ -366,15 +440,14 @@
         </form>
 
         <div id="result" class="result"></div>
+        </div>
 
-        <!-- Divider -->
-        <div style="margin: 48px 0; border-top: 2px solid #e2e8f0;"></div>
+        <!-- Tab 2: Existing Role Link -->
+        <div class="tab-panel" id="existingPanel">
+            <div class="section-title">Generate Link for Existing Role</div>
+            <div class="section-subtitle">Create a join link for students to access an existing class</div>
 
-        <!-- Generate Link for Existing Role -->
-        <h2 style="text-align: center; color: #2d3748; font-size: 24px; margin-bottom: 8px;">Generate Link for Existing Role</h2>
-        <p class="subtitle">Create a join link for students to access an existing class</p>
-
-        <div class="form-group">
+            <div class="form-group">
             <label for="roleSelect">Select Role</label>
             <div class="custom-select disabled" id="customSelect">
                 <div class="select-display" id="selectDisplay">
@@ -391,11 +464,36 @@
         </button>
 
         <div id="existingRoleResult" class="result"></div>
+        </div>
     </div>
 
     <script>
         const WEBHOOK_URL = 'https://tsu-n8n.onrender.com/webhook/create-discord-class';
         const GET_ROLES_URL = 'https://tsu-n8n.onrender.com/webhook/get-discord-roles';
+
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanels = document.querySelectorAll('.tab-panel');
+
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const targetTab = tab.dataset.tab;
+
+                // Remove active class from all tabs and panels
+                tabs.forEach(t => t.classList.remove('active'));
+                tabPanels.forEach(panel => panel.classList.remove('active'));
+
+                // Add active class to clicked tab
+                tab.classList.add('active');
+
+                // Show corresponding panel
+                if (targetTab === 'create') {
+                    document.getElementById('createPanel').classList.add('active');
+                } else if (targetTab === 'existing') {
+                    document.getElementById('existingPanel').classList.add('active');
+                }
+            });
+        });
 
         // Basic HTTP Auth
         const AUTH_USER = 'tsu';
