@@ -479,6 +479,9 @@
         const WEBHOOK_URL = 'https://tsu-n8n.onrender.com/webhook/create-discord-class';
         const GET_ROLES_URL = 'https://tsu-n8n.onrender.com/webhook/get-discord-roles';
 
+        // Roles to exclude from the dropdown
+        const EXCLUDED_ROLES = ['Admin', 'Instructor'];
+
         // Tab switching functionality
         const tabs = document.querySelectorAll('.tab');
         const tabPanels = document.querySelectorAll('.tab-panel');
@@ -688,7 +691,11 @@
             .then(response => response.json())
             .then(roles => {
                 selectOptions.innerHTML = '';
-                roles.forEach(role => {
+
+                // Filter out excluded roles (Admin, Instructor)
+                const filteredRoles = roles.filter(role => !EXCLUDED_ROLES.includes(role.name));
+
+                filteredRoles.forEach(role => {
                     const option = document.createElement('div');
                     option.className = 'select-option';
                     option.dataset.roleId = role.id;
