@@ -91,6 +91,7 @@
     <script>
         const WEBHOOK_URL = 'https://tsu-n8n.onrender.com/webhook/create-discord-class';
         const GET_ROLES_URL = 'https://tsu-n8n.onrender.com/webhook/get-discord-roles';
+        const GENERATE_LINK_URL = 'https://tsu-n8n.onrender.com/webhook/generate-role-link';
 
         // Roles to exclude from the dropdown
         const EXCLUDED_ROLES = ['Admin', 'Instructor'];
@@ -408,25 +409,66 @@
         });
 
         // Generate link button click handler
-        generateLinkBtn.addEventListener('click', () => {
+        generateLinkBtn.addEventListener('click', async () => {
             if (!selectedRole) return;
 
-            // Generate OAuth URL
-            const oauthUrl = `https://discord.com/api/oauth2/authorize?client_id=1458911804368490654&redirect_uri=https%3A%2F%2Ftsu-n8n.onrender.com%2Fwebhook%2Fdiscord-oauth&response_type=code&scope=identify%20guilds.join&state=${selectedRole.id}`;
+            // Show loading state
+            generateLinkBtn.disabled = true;
+            generateBtnText.textContent = 'Generating...';
+            generateSpinner.style.display = 'inline-block';
+            existingRoleResult.className = 'result';
+            existingRoleResult.style.display = 'none';
 
-            // Display result
-            existingRoleResult.className = 'result success';
-            existingRoleResult.style.display = '';
-            existingRoleResult.innerHTML = `
-                <div class="result-title">✅ Join Link Generated: ${selectedRole.name}</div>
-                <div class="result-content">
-                    <p style="margin-bottom: 12px;"><strong>Share this link with students to grant them access:</strong></p>
-                    <div class="oauth-url" id="existingOauthUrl">${oauthUrl}</div>
-                    <button class="copy-btn" onclick="copyExistingOAuthUrl(this)">
-                        📋 Copy Join Link
-                    </button>
-                </div>
-            `;
+            try {
+                const response = await fetch(GENERATE_LINK_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ roleId: selectedRole.id })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    existingRoleResult.className = 'result success';
+                    existingRoleResult.style.display = '';
+                    const cachedNote = data.cached ? ' <span style="color: #ca8a04;">(from cache)</span>' : '';
+                    existingRoleResult.innerHTML = `
+                        <div class="result-title">✅ Join Link Generated: ${data.roleName}${cachedNote}</div>
+                        <div class="result-content">
+                            <p style="margin-bottom: 12px;"><strong>Share this link with students to grant them access:</strong></p>
+                            <div class="oauth-url" id="existingOauthUrl">${data.oauthUrl}</div>
+                            <button class="copy-btn" onclick="copyExistingOAuthUrl(this)">
+                                📋 Copy Join Link
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    existingRoleResult.className = 'result error';
+                    existingRoleResult.style.display = '';
+                    existingRoleResult.innerHTML = `
+                        <div class="result-title">❌ Error</div>
+                        <div class="result-content">
+                            <p>${data.error || 'An unexpected error occurred. Please try again.'}</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                existingRoleResult.className = 'result error';
+                existingRoleResult.style.display = '';
+                existingRoleResult.innerHTML = `
+                    <div class="result-title">❌ Network Error</div>
+                    <div class="result-content">
+                        <p>Could not connect to the server. Please check your internet connection and try again.</p>
+                    </div>
+                `;
+            } finally {
+                // Reset button state
+                generateBtnText.textContent = 'Generate Join Link';
+                generateSpinner.style.display = 'none';
+                generateLinkBtn.disabled = false;
+            }
         });
 
         function copyExistingOAuthUrl(btn) {
